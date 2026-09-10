@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Performance Analytics Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/phase3.css" />
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading">
+  <div class="spin"></div>
+  <div class="load-text">Loading analytics data…</div>
+</div>
+
+<!-- App Shell -->
+<div id="app">
+
+  <!-- Header -->
+  <header id="header">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+      <div>
+        <div>Student Performance Analytics</div>
+        <div class="subtitle">Academic performance data — 5-year cohort study</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="data-badge" id="header-badge">Loading…</div>
+  </header>
+
+  <!-- Body: sidebar + main -->
+  <div id="body">
+
+    <!-- ── FILTER SIDEBAR ─────────────────────────────────── -->
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <span class="title">Filters</span>
+        <button id="btn-reset" title="Reset all filters">Reset All</button>
+      </div>
+
+      <!-- Program -->
+      <div class="filter-group">
+        <label class="filter-label" for="filter-prog">Programme</label>
+        <select id="filter-prog" class="filter-select">
+          <option value="">All Programmes</option>
+        </select>
+      </div>
+
+      <!-- Graduation Year -->
+      <div class="filter-group">
+        <label class="filter-label" for="filter-year">Graduation Year</label>
+        <select id="filter-year" class="filter-select">
+          <option value="">All Years</option>
+        </select>
+      </div>
+
+      <!-- Gender -->
+      <div class="filter-group">
+        <label class="filter-label" for="filter-gender">Gender</label>
+        <select id="filter-gender" class="filter-select">
+          <option value="">All Genders</option>
+          <option value="Female">Female</option>
+          <option value="Male">Male</option>
+        </select>
+      </div>
+
+      <!-- Performance Category -->
+      <div class="filter-group">
+        <label class="filter-label" for="filter-tier">Performance Category</label>
+        <select id="filter-tier" class="filter-select">
+          <option value="">All Categories</option>
+          <option value="Distinction">Distinction (≥ 4.50)</option>
+          <option value="Upper Credit">Upper Credit (4.00–4.49)</option>
+          <option value="Lower Credit">Lower Credit (3.50–3.99)</option>
+          <option value="Merit">Merit (3.00–3.49)</option>
+          <option value="Pass">Pass (2.50–2.99)</option>
+          <option value="Below Pass">Below Pass (&lt; 2.50)</option>
+        </select>
+      </div>
+
+      <!-- Student Lookup -->
+      <div class="filter-group">
+        <label class="filter-label">Student Lookup</label>
+        <div class="student-search-wrap">
+          <input type="text" id="input-student" placeholder="Search by ID…" autocomplete="off" />
+          <div id="student-dropdown"></div>
+        </div>
+        <button id="student-clear" style="display:none">✕ Clear student</button>
+      </div>
+
+      <!-- Active filter count -->
+      <div class="filter-count-wrap">
+        <span id="filter-count-badge">3,046 students shown</span>
+      </div>
+    </aside>
+
+    <!-- ── MAIN: nav + content ────────────────────────────── -->
+    <div id="main">
+
+      <!-- Tab Navigation -->
+      <nav id="nav">
+        <button class="nav-tab active" data-tab="overview">Overview</button>
+        <button class="nav-tab" data-tab="distribution">Distribution</button>
+        <button class="nav-tab" data-tab="programs">Programmes</button>
+        <button class="nav-tab" data-tab="trends">Trends</button>
+        <button class="nav-tab" data-tab="student">Student Profile</button>
+      </nav>
+
+      <!-- Active Filter Strip -->
+      <div id="active-filter-strip" style="display:none;">
+        <span class="chips-label">Active Filters:</span>
+        <div id="active-chips"></div>
+        <button id="chips-clear-all" title="Clear all active filters">Clear All</button>
+      </div>
+
+      <!-- Content -->
+      <div id="content">
+
+        <!-- ══════════════════════════════════════════════════
+             TAB 1 — OVERVIEW
+        ══════════════════════════════════════════════════ -->
+        <section id="tab-overview" class="section active">
+          <div class="section-title">Overview</div>
+          <div class="section-subtitle">Summary statistics for the currently filtered cohort.</div>
+
+          <!-- Aggregate Insights: What the data says -->
+          <div class="agg-insight-panel" id="overview-cohort-insights">
+            <div class="agg-insight-title">What the data says — Cohort Summary</div>
+            <div class="agg-insight-grid" id="cohort-insights-grid">
+              <div class="agg-insight-item">
+                <span class="ai-label">Strongest Programme</span>
+                <span class="ai-value" id="ai-strong-prog">—</span>
+                <span class="ai-sub" id="ai-strong-prog-sub">in filtered cohort</span>
+              </div>
+              <div class="agg-insight-item">
+                <span class="ai-label">Level 100 → 200 Trajectory</span>
+                <span class="ai-value" id="ai-l200-dip">—</span>
+                <span class="ai-sub" id="ai-l200-dip-sub">average shift from Level 100</span>
+              </div>
+              <div class="agg-insight-item">
+                <span class="ai-label">Gender Comparison</span>
+                <span class="ai-value" id="ai-gender-gap">—</span>
+                <span class="ai-sub" id="ai-gender-gap-sub">mean CGPA gap</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="grid-4" id="kpi-row">
+            <div class="kpi-card blue">
+              <div class="kpi-label">Total Students</div>
+              <div class="kpi-value blue" id="kpi-total">—</div>
+              <div class="kpi-sub" id="kpi-total-sub">of 3,046 in dataset</div>
+            </div>
+            <div class="kpi-card green">
+              <div class="kpi-label">Average CGPA</div>
+              <div class="kpi-value green" id="kpi-avg-cgpa">—</div>
+              <div class="kpi-sub" id="kpi-avg-sub">on 5.00 scale</div>
+            </div>
+            <div class="kpi-card amber">
+              <div class="kpi-label">Distinction &amp; Credit</div>
+              <div class="kpi-value amber" id="kpi-top-pct">—</div>
+              <div class="kpi-sub" id="kpi-top-sub">CGPA ≥ 3.50</div>
+            </div>
+            <div class="kpi-card slate">
+              <div class="kpi-label">Gender Split</div>
+              <div class="kpi-value" id="kpi-gender">—</div>
+              <div class="kpi-sub" id="kpi-gender-sub">Female / Male</div>
+            </div>
+          </div>
+
+          <!-- CGPA Histogram + Tier Donut -->
+          <div class="grid-2-1 mb-5">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">1. CGPA Distribution — Histogram</div>
+                  <div class="card-desc">Frequency distribution of cumulative CGPA scores across the filtered cohort</div>
+                  <div id="hist-student-badge" class="hist-student-badge" style="display:none"></div>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:220px">
+                <canvas id="chart-hist"></canvas>
+              </div>
+              <div class="chart-explain-box">
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-show">What it shows</span>
+                  <span class="ce-desc">The frequency distribution of student cumulative CGPAs across the filtered cohort, divided into grade intervals. When a student is selected, their CGPA bin is explicitly highlighted.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-use">Why it's useful</span>
+                  <span class="ce-desc">Helps students understand the overall shape of academic attainment (median, spread, skewness) and determine whether grades cluster in upper or lower bands.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-look">What to look for</span>
+                  <span class="ce-desc">Where your score sits relative to the peak (mode) and the cohort mean (dashed vertical line), and whether the majority of peers score above or below your bin.</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">7. Performance Category Distribution — Donut</div>
+                  <div class="card-desc">Proportion of cohort in each dashboard performance category</div>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:180px">
+                <canvas id="chart-tier"></canvas>
+              </div>
+              <div id="tier-legend" style="margin-top:10px;display:flex;flex-direction:column;gap:4px"></div>
+              <div id="tier-definitions-box" style="margin-top:10px;background:var(--slate-50);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;">
+                <div style="font-size:0.72rem;font-weight:700;color:var(--text-primary);margin-bottom:6px">Performance Categories &amp; Definitions:</div>
+                <div id="tier-definitions-list" style="display:flex;flex-direction:column;gap:4px;font-size:0.7rem;color:var(--text-secondary)"></div>
+              </div>
+              <div class="chart-explain-box">
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-show">What it shows</span>
+                  <span class="ce-desc">The proportion and count of students classified into each performance tier: Distinction, Upper Credit, Lower Credit, Merit, Pass, and Below Pass.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-use">Why it's useful</span>
+                  <span class="ce-desc">Summarizes overall performance category distribution and shows the proportion of students attaining upper-tier academic standing.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-look">What to look for</span>
+                  <span class="ce-desc">The proportion of students achieving credit or distinction standing (CGPA ≥ 3.50). Click any slice or legend item to filter the dashboard.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Programme Bar + Year Trend (mini) -->
+          <div class="grid-2 mb-5">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">2. Program-wise Average CGPA — Bar Chart</div>
+                  <div class="card-desc">Filtered cohort — sorted descending by mean CGPA</div>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:240px">
+                <canvas id="chart-prog-bar-ov"></canvas>
+              </div>
+              <div class="chart-explain-box">
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-show">What it shows</span>
+                  <span class="ce-desc">The mean cumulative CGPA for each degree programme in the filtered cohort, sorted from highest to lowest average, along with student sample sizes (n).</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-use">Why it's useful</span>
+                  <span class="ce-desc">Allows students to benchmark their programme's average attainment against other departments across the institution.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-look">What to look for</span>
+                  <span class="ce-desc">Where your programme ranks relative to others, and the cohort sample size (n) behind each bar. Click any bar to filter the dashboard by that programme.</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">5. Graduation Year vs Average CGPA — Line Chart</div>
+                  <div class="card-desc">Chronological progression of mean CGPA across graduating cohorts (2010–2014)</div>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:240px">
+                <canvas id="chart-year-ov"></canvas>
+              </div>
+              <div class="chart-explain-box">
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-show">What it shows</span>
+                  <span class="ce-desc">The chronological progression of mean CGPA across graduating cohorts from 2010 to 2014.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-use">Why it's useful</span>
+                  <span class="ce-desc">Demonstrates batch-to-batch stability and cohort attainment trends across the 5-year academic study period.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-look">What to look for</span>
+                  <span class="ce-desc">This chart shows differences between graduation cohorts. It describes variation in average performance but does not establish why the differences occurred. Click any point to filter by graduation year.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════
+             TAB 2 — DISTRIBUTION
+        ══════════════════════════════════════════════════ -->
+        <section id="tab-distribution" class="section">
+          <div class="section-title">Distribution Analysis</div>
+          <div class="section-subtitle">Explore how performance is distributed across the filtered group.</div>
+
+          <!-- Scatter: CGPA vs SGPA -->
+          <div class="card mb-5">
+            <div class="card-header">
+              <div>
+                <div class="card-title">4. SGPA vs CGPA — Scatter Plot</div>
+                <div class="card-desc">Individual student coordinates comparing cumulative CGPA with final semester SGPA</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <label class="filter-label" style="margin:0">Colour by:</label>
+                <select id="scatter-color-by" class="filter-select" style="width:120px">
+                  <option value="prog">Programme</option>
+                  <option value="gender">Gender</option>
+                  <option value="tier">Category</option>
+                </select>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:320px">
+              <canvas id="chart-scatter"></canvas>
+            </div>
+            <div class="chart-explain-box">
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-show">What it shows</span>
+                <span class="ce-desc">Individual student positions comparing cumulative CGPA (x-axis) with final semester SGPA (y-axis), alongside a 1:1 diagonal reference line.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-use">Why it's useful</span>
+                <span class="ce-desc">Identifies final-semester performance dynamics—dots above the diagonal indicate students whose final semester improved over their cumulative baseline, while dots below reflect a final-semester decline.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-look">What to look for</span>
+                <span class="ce-desc">Your highlighted amber position. Note: this visualizes descriptive correlation, not academic causation. Click any dot to view that student's complete profile.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gender Comparison Row: Gender-wise Average (Viz 6) + Gender by Level -->
+          <div class="grid-2 mb-5">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">6. Gender-wise Average CGPA — Bar Chart</div>
+                  <div class="card-desc">Mean CGPA and student sample sizes by gender</div>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:220px">
+                <canvas id="chart-gender-avg"></canvas>
+              </div>
+              <div class="chart-explain-box">
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-show">What it shows</span>
+                  <span class="ce-desc">The average cumulative CGPA of Female vs Male students in the filtered cohort, including student counts and proportions.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-use">Why it's useful</span>
+                  <span class="ce-desc">Provides an institutional demographic overview of academic attainment across gender groups within the selected criteria.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-look">What to look for</span>
+                  <span class="ce-desc">The difference between group averages and sample sizes. Note: this observation is purely descriptive of this specific dataset and does not imply generalized or causal claims about gender and academic capability.</span>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Gender Attainment by Academic Stage</div>
+                  <div class="card-desc">Mean CGPA at Level 100, 200, 300, and 400 by gender</div>
+                </div>
+              </div>
+              <div class="chart-wrap" style="height:220px">
+                <canvas id="chart-gender-level"></canvas>
+              </div>
+              <div class="chart-explain-box">
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-show">What it shows</span>
+                  <span class="ce-desc">Mean CGPA at each academic level (100 to 400) broken down by gender.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-use">Why it's useful</span>
+                  <span class="ce-desc">Reveals whether attainment differences between gender groups remain constant or shift across academic stages.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-look">What to look for</span>
+                  <span class="ce-desc">Stage-to-stage consistency across levels. Purely descriptive of this cohort.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribution Baseline Overlay -->
+          <div class="card mb-5">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Cohort Distribution vs Full Dataset Baseline</div>
+                <div class="card-desc">Percentage overlay comparing filtered cohort with the overall 3,046-student distribution</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:200px">
+              <canvas id="chart-hist-overlay"></canvas>
+            </div>
+            <div class="chart-explain-box">
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-show">What it shows</span>
+                <span class="ce-desc">Filtered group frequency (%) overlaid against the overall institutional baseline distribution (dashed line).</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-use">Why it's useful</span>
+                <span class="ce-desc">Instantly shows whether the currently active filter selects above- or below-average attainment relative to the entire university cohort.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-look">What to look for</span>
+                <span class="ce-desc">Whether the filtered cohort curve shifts to the right (higher attainment) or left (lower attainment) of the dashed baseline.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════
+             TAB 3 — PROGRAMMES
+        ══════════════════════════════════════════════════ -->
+        <section id="tab-programs" class="section">
+          <div class="section-title">Programme Analysis</div>
+          <div class="section-subtitle">Compare academic performance across programmes and academic levels.</div>
+
+          <!-- Viz 8: Program Performance Comparison — Stacked Bar -->
+          <div class="card mb-5">
+            <div class="card-header">
+              <div>
+                <div class="card-title">8. Program Performance Comparison — Stacked Bar</div>
+                <div class="card-desc">Dashboard performance category distribution (Distinction to Below Pass) across all 17 degree programmes</div>
+              </div>
+              <div class="chart-toggle-group" id="stacked-mode-toggle">
+                <button class="chart-toggle-btn active" data-mode="count">Student Count</button>
+                <button class="chart-toggle-btn" data-mode="percent">100% Normalized (%)</button>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:320px">
+              <canvas id="chart-prog-stacked"></canvas>
+            </div>
+            <div class="chart-explain-box">
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-show">What it shows</span>
+                <span class="ce-desc">The internal composition of performance categories (Distinction to Below Pass) across all 17 programmes using consistent category colours.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-use">Why it's useful</span>
+                <span class="ce-desc">Highlights how attainment distributions vary by discipline, revealing which programmes have higher concentrations of distinction and credit-tier students.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-look">What to look for</span>
+                <span class="ce-desc">The relative share of green/blue segments (Distinction &amp; Credit) versus amber/red segments. Toggle between absolute counts and 100% normalized percentages to compare proportions directly. Click any programme bar to filter.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Radar + summary table -->
+          <div class="grid-1-2 mb-5">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Level-wise Profile — Radar</div>
+                  <div class="card-desc">Selected programme vs dataset average at each level</div>
+                </div>
+              </div>
+              <div style="margin-bottom:8px">
+                <select id="radar-prog-select" class="filter-select">
+                  <option value="">— Pick a programme —</option>
+                </select>
+              </div>
+              <div class="chart-wrap" style="height:260px">
+                <canvas id="chart-radar"></canvas>
+              </div>
+              <div class="chart-explain-box">
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-show">What it shows</span>
+                  <span class="ce-desc">A multi-axis radar comparing the selected programme's mean score across Level 100, 200, 300, 400, and SGPA against the institutional baseline.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-use">Why it's useful</span>
+                  <span class="ce-desc">Evaluates the dimensional strengths of a programme's curriculum across academic progression stages.</span>
+                </div>
+                <div class="ce-item">
+                  <span class="ce-tag ce-tag-look">What to look for</span>
+                  <span class="ce-desc">A wider polygon indicates stronger overall attainment across levels relative to the university average.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Programme Comparison Table</div>
+                  <div class="card-desc">Key metrics for each programme in the filtered cohort (click any row to filter)</div>
+                </div>
+              </div>
+              <div style="overflow-x:auto;max-height:340px;overflow-y:auto">
+                <table class="data-table" id="prog-table">
+                  <thead>
+                    <tr>
+                      <th>Programme</th>
+                      <th>N</th>
+                      <th>Avg CGPA</th>
+                      <th>Avg L100</th>
+                      <th>Avg L200</th>
+                      <th>Avg L300</th>
+                      <th>Avg L400</th>
+                      <th>Tier</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prog-table-body">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Full-width Programme Bar -->
+          <div class="card mb-5">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Average CGPA by Programme — Detailed Comparison</div>
+                <div class="card-desc">All programmes in the filtered cohort, sorted by mean CGPA</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:260px">
+              <canvas id="chart-prog-bar"></canvas>
+            </div>
+            <div class="chart-explain-box">
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-show">What it shows</span>
+                <span class="ce-desc">Detailed mean CGPA across all 17 programmes in descending order.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-use">Why it's useful</span>
+                <span class="ce-desc">Allows students to quickly locate their programme and see how far above or below the institutional average it ranks.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-look">What to look for</span>
+                <span class="ce-desc">Rank position and numerical mean. Click any bar to filter the entire dashboard by that programme.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════
+             TAB 4 — TRENDS
+        ══════════════════════════════════════════════════ -->
+        <section id="tab-trends" class="section">
+          <div class="section-title">Trends &amp; Trajectories</div>
+          <div class="section-subtitle">How performance evolves across academic levels and graduation cohorts.</div>
+
+          <!-- Level Trajectory -->
+          <div class="card mb-5">
+            <div class="card-header">
+              <div>
+                <div class="card-title">3. Academic Stage Trajectory (Level 100 → 400) — Line Chart</div>
+                <div class="card-desc">Mean CGPA progression across Level 100, 200, 300, and 400 by selected cohort grouping</div>
+              </div>
+              <div>
+                <select id="traj-group-by" class="filter-select" style="width:140px">
+                  <option value="overall">Overall (filtered)</option>
+                  <option value="gender">By Gender</option>
+                  <option value="prog">By Programme (top 6)</option>
+                  <option value="year">By Grad Year</option>
+                </select>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:280px">
+              <canvas id="chart-trajectory"></canvas>
+            </div>
+            <div class="chart-explain-box">
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-show">What it shows</span>
+                <span class="ce-desc">How average student CGPA changes from Level 100 through Level 400 across the chosen grouping.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-use">Why it's useful</span>
+                <span class="ce-desc">Highlights transition stages across academic levels, showing how performance shifts between foundation courses and advanced coursework.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-look">What to look for</span>
+                <span class="ce-desc">Average performance declines from Level 100 to Level 200 before recovering in later stages across the overall dataset. Observe how your selected cohort compares to this trajectory.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Year Trend (full) -->
+          <div class="card mb-5">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Graduation Year Cohort Size &amp; Mean CGPA Trend</div>
+                <div class="card-desc">Dual-axis view: student count per batch (bars, left axis) and average CGPA (line, right axis)</div>
+              </div>
+            </div>
+            <div class="chart-wrap" style="height:220px">
+              <canvas id="chart-year-full"></canvas>
+            </div>
+            <div class="chart-explain-box">
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-show">What it shows</span>
+                <span class="ce-desc">Whether later graduation cohorts performed differently from earlier ones—bars show student count (left axis); line shows mean CGPA (right axis).</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-use">Why it's useful</span>
+                <span class="ce-desc">Provides context on cohort size fluctuations and shows whether graduation averages correlate with class size changes.</span>
+              </div>
+              <div class="ce-item">
+                <span class="ce-tag ce-tag-look">What to look for</span>
+                <span class="ce-desc">This chart shows differences between graduation cohorts. It describes variation in average performance but does not establish why the differences occurred. Click any point to filter by graduation year.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════
+             TAB 5 — STUDENT PROFILE
+        ══════════════════════════════════════════════════ -->
+        <section id="tab-student" class="section">
+          <div class="section-title">Student Profile</div>
+          <div class="section-subtitle">Search for a student by ID to view their individual academic profile, performance comparisons, and personalised recommendations.</div>
+
+          <!-- Search bar (prominent, at top of section) -->
+          <div class="card mb-5" style="padding: var(--sp-4)">
+            <div style="display:flex;gap:var(--sp-3);align-items:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input
+                type="text"
+                id="profile-search"
+                placeholder="Type a student ID (e.g. 54093) …"
+                class="filter-select"
+                style="flex:1;font-size:0.9rem;padding:8px 12px"
+                autocomplete="off"
+              />
+              <button id="profile-search-btn" style="
+                padding: 8px 16px;
+                background: var(--primary);
+                color: #fff;
+                border: none;
+                border-radius: var(--r-sm);
+                font-size: 0.82rem;
+                font-weight: 600;
+                cursor: pointer;
+              ">Search</button>
+            </div>
+            <div id="profile-search-results" style="margin-top:var(--sp-3);display:none"></div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="student-empty-state">
+            <div class="icon">🎓</div>
+            <div class="msg">No student selected</div>
+            <div class="hint">Use the search bar above or the Student Lookup in the sidebar to find a student.</div>
+          </div>
+
+          <!-- Profile Panel (shown after student selected) -->
+          <div id="student-profile-panel">
+
+            <!-- User Experience Flow Breadcrumbs -->
+            <div class="user-flow">
+              <div class="user-flow-step done" id="flow-step-1"><span>1</span> DATA</div>
+              <span class="user-flow-arrow">→</span>
+              <div class="user-flow-step done" id="flow-step-2"><span>2</span> MY PERFORMANCE</div>
+              <span class="user-flow-arrow">→</span>
+              <div class="user-flow-step done" id="flow-step-3"><span>3</span> PEER COMPARISON</div>
+              <span class="user-flow-arrow">→</span>
+              <div class="user-flow-step done" id="flow-step-4"><span>4</span> WEAK/STRONG AREA</div>
+              <span class="user-flow-arrow">→</span>
+              <div class="user-flow-step active" id="flow-step-5"><span>5</span> INSIGHT</div>
+              <span class="user-flow-arrow">→</span>
+              <div class="user-flow-step" id="flow-step-6"><span>6</span> IMPROVEMENT ACTION</div>
+            </div>
+
+            <!-- Student Filter Notice (if student does not match active global filters) -->
+            <div id="student-filter-notice" style="display:none;"></div>
+
+            <!-- Profile Card (gradient header) -->
+            <!-- 1. MY PERFORMANCE: Profile Header & 7-Metric Summary Grid -->
+            <div class="profile-card mb-4" id="profile-card-header">
+              <div>
+                <div class="profile-id" id="profile-id-label">ID: —</div>
+                <div class="profile-name" id="profile-name">—</div>
+                <div class="profile-meta" id="profile-meta"></div>
+                <div style="margin-top:var(--sp-3)" id="profile-tier-badge"></div>
+              </div>
+              <div>
+                <div class="profile-cgpa-big" id="profile-cgpa-big">—</div>
+                <div class="profile-cgpa-label">Cumulative CGPA</div>
+                <div style="margin-top:var(--sp-2)" id="profile-percentile-badge"></div>
+              </div>
+            </div>
+
+            <!-- My Performance Summary (7 Key Metrics) -->
+            <div class="card mb-5">
+              <div class="card-header" style="margin-bottom:var(--sp-3)">
+                <div>
+                  <div class="card-title">My Performance Summary</div>
+                  <div class="card-desc">7 core academic indicators: personal attainment, institutional averages, and benchmark differences</div>
+                </div>
+              </div>
+              <div id="student-perf-summary" class="summary-grid">
+                <!-- dynamically rendered by renderPerformanceSummary -->
+              </div>
+            </div>
+
+            <!-- 2. HOW I COMPARE: Benchmark Selection, Trajectory, Stage Table, Gap, SGPA & Percentile -->
+            <div class="card mb-5">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">How I Compare — Peer Benchmarks</div>
+                  <div class="card-desc">Compare your academic trajectory against programme peers, graduation cohort, or university-wide averages</div>
+                </div>
+                <div class="comparison-toggle" id="cmp-toggle">
+                  <button class="cmp-btn active" data-cmp="prog">My Programme</button>
+                  <button class="cmp-btn" data-cmp="year">My Grad Year</button>
+                  <button class="cmp-btn" data-cmp="all">All Students</button>
+                </div>
+              </div>
+
+              <div class="grid-2 mt-4">
+                <div>
+                  <div style="font-size:0.8rem;font-weight:700;color:var(--text-primary);margin-bottom:6px">Trajectory Comparison (Level 100 → 400)</div>
+                  <div class="chart-wrap" style="height:210px">
+                    <canvas id="chart-student-cmp"></canvas>
+                  </div>
+                  <div class="chart-explain" style="margin-top:8px">
+                    <strong>What does this show?</strong> The orange line is your path; the dashed grey line is the selected comparison group mean.
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:0.8rem;font-weight:700;color:var(--text-primary);margin-bottom:6px">Stage Comparison Table</div>
+                  <div id="cmp-stage-table-container"></div>
+                </div>
+              </div>
+
+              <!-- Diagnostic KPI Grid -->
+              <div class="grid-3 mt-4 pt-4" style="border-top:1px solid var(--border)">
+                <div>
+                  <div class="card-title mb-2" style="font-size:0.85rem">Performance Gap</div>
+                  <div id="perf-gap-display"></div>
+                  <div class="chart-explain mt-2">
+                    <strong>What does this mean for me?</strong>
+                    Shows your standing relative to the selected peer mean. Positive indicates above average; negative indicates room for improvement.
+                  </div>
+                </div>
+                <div>
+                  <div class="card-title mb-2" style="font-size:0.85rem">Final Semester SGPA</div>
+                  <div id="sgpa-display"></div>
+                  <div class="chart-explain mt-2">
+                    <strong>What does this mean for me?</strong>
+                    Compares your final semester SGPA to your cumulative CGPA to identify whether your momentum was upward, downward, or stable.
+                  </div>
+                </div>
+                <div>
+                  <div class="card-title mb-2" style="font-size:0.85rem">Percentile Rank</div>
+                  <div id="percentile-display" style="display:flex;justify-content:center;padding:var(--sp-2) 0"></div>
+                  <div class="chart-explain mt-2">
+                    <strong>What does this mean for me?</strong>
+                    Percentile indicates the share of students in this group with a CGPA equal to or below yours. This is a distribution measure, not an exact class rank.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. MY STRONG / WEAK STAGES: Performance Journey (Level 100 → 400) & Insight Explorer -->
+            <div class="card mb-5">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">My Performance Journey (Level 100 → 400)</div>
+                  <div class="card-desc">Academic stage progression showing inter-stage changes (Δ), peak attainments, and areas for focus</div>
+                </div>
+              </div>
+
+              <div class="grid-2 mt-3">
+                <div>
+                  <div class="stage-grid" id="stage-grid"></div>
+                  <div class="stage-click-hint mt-2">
+                    <span>💡 Tip: Click any stage above to open the <strong>Insight Explorer</strong> (DATA → FINDING → EXPLANATION → ACTION)</span>
+                  </div>
+                  <div class="chart-explain mt-3">
+                    <strong>What does this show?</strong> Your CGPA at each academic level with inter-stage changes (Δ).
+                    The <span style="color:var(--green-700);font-weight:700">green</span> stage is your strongest;
+                    the <span style="color:var(--red-700);font-weight:700">red</span> stage is your weakest.
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:0.8rem;font-weight:700;color:var(--text-primary);margin-bottom:6px">Level-wise CGPA Distribution</div>
+                  <div class="chart-wrap" style="height:210px">
+                    <canvas id="chart-student-level"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Insight Explorer Container -->
+              <div id="insight-explorer" hidden style="margin-top:var(--sp-4)"></div>
+            </div>
+
+            <!-- 4. WHAT THE DATA SAYS & WHAT IT MEANS FOR ME -->
+            <div id="insight-meaning-box" class="mb-5">
+              <!-- dynamically filled -->
+            </div>
+
+            <!-- 5. REALISTIC PERFORMANCE TARGETS & GOALS -->
+            <div id="student-goals-box" class="mb-5">
+              <!-- dynamically filled -->
+            </div>
+
+            <!-- 6. HOW CAN I IMPROVE? -->
+            <div id="insight-improve-box" class="mb-5">
+              <!-- dynamically filled -->
+            </div>
+
+          </div><!-- /student-profile-panel -->
+        </section>
+
+      </div><!-- /content -->
+    </div><!-- /main -->
+  </div><!-- /body -->
+</div><!-- /app -->
+
+<!-- Data (pre-processed, no fetch needed) -->
+<script src="data/data.js"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- Dashboard modules -->
+<script src="js/main.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/insights.js"></script>
+<script src="js/student.js"></script>
+
+</body>
+</html>
