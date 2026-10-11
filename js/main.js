@@ -426,6 +426,7 @@ function boot() {
   if (typeof window.initFilters === 'function') window.initFilters(data);
   if (typeof window.initAllCharts === 'function') window.initAllCharts(data);
   if (typeof window.initDataExplorer === 'function') window.initDataExplorer();
+  if (typeof window.initStudentRank === 'function') window.initStudentRank();
   applyFilters();
 
   // Hide loading

@@ -303,6 +303,11 @@ function selectStudentGlobal(student) {
   if (typeof window.updateAllCharts === 'function') {
     window.updateAllCharts(STATE.filteredStudents);
   }
+
+  // Update Student Rank & Performance if module is loaded
+  if (typeof window.renderStudentRankView === 'function') {
+    window.renderStudentRankView();
+  }
 }
 
 /* ─── Clear student selection ──────────────────────────────────────── */
@@ -337,6 +342,10 @@ function clearStudentSelection() {
 
   if (typeof window.highlightSelectedRowInExplorer === 'function') {
     window.highlightSelectedRowInExplorer();
+  }
+
+  if (typeof window.renderStudentRankView === 'function') {
+    window.renderStudentRankView();
   }
 }
 

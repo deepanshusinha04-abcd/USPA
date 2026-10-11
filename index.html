@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/phase3.css" />
   <link rel="stylesheet" href="css/data-explorer.css" />
+  <link rel="stylesheet" href="css/student-rank.css" />
 </head>
 <body>
 
@@ -113,6 +114,7 @@
         <button class="nav-tab" data-tab="programs">Programmes</button>
         <button class="nav-tab" data-tab="trends">Trends</button>
         <button class="nav-tab" data-tab="student">Student Profile</button>
+        <button class="nav-tab" data-tab="rank">Student Rank &amp; Performance</button>
         <button class="nav-tab" data-tab="explorer">Data Explorer</button>
       </nav>
 
@@ -818,6 +820,143 @@
         </section>
 
         <!-- ══════════════════════════════════════════════════
+             TAB — STUDENT RANK & PERFORMANCE (Phase 8)
+        ══════════════════════════════════════════════════ -->
+        <section id="tab-rank" class="section">
+          <div class="section-title">Student Rank &amp; Performance</div>
+          <div class="section-subtitle">Comprehensive competition ranking, cohort percentile standing, and benchmark performance comparison across eligible records.</div>
+
+          <!-- Student Selector Banner -->
+          <div class="rank-selector-banner">
+            <div class="rank-search-row">
+              <div class="rank-search-input-wrap">
+                <input
+                  type="text"
+                  id="rank-student-input"
+                  class="rank-search-input"
+                  placeholder="Select or search student by ID or Programme (e.g. 54093, BCH)…"
+                  autocomplete="off"
+                />
+                <div id="rank-student-dropdown" class="rank-search-dropdown"></div>
+              </div>
+              <div id="rank-selected-pill" class="rank-selected-pill" style="display:none;"></div>
+              <button id="rank-student-clear" class="de-page-btn" style="display:none;">✕ Clear Selection</button>
+            </div>
+          </div>
+
+          <!-- Empty State (No student selected) -->
+          <div id="rank-empty-state" class="de-empty-state">
+            <div class="de-empty-icon">📊</div>
+            <div class="de-empty-text">No student currently selected for ranking analysis.</div>
+            <div class="de-empty-sub">Search by ID or Programme above, or select a student from the Student Profile / Data Explorer tabs to view their academic ranking and comparative performance.</div>
+          </div>
+
+          <!-- Active Content Panel -->
+          <div id="rank-content-panel" style="display:none;">
+
+            <!-- 1. Performance Summary Cards (6 Cards) -->
+            <div id="rank-cards-grid" class="rank-cards-grid"></div>
+
+            <!-- 2. Performance Benchmarks Table -->
+            <div class="card mb-5">
+              <div class="card-title">Performance Benchmark Comparison</div>
+              <div class="card-desc">Detailed comparison of student cumulative and final-stage metrics against overall, programme, and graduation-year cohort averages.</div>
+              <div style="overflow-x:auto;margin-top:var(--sp-3);">
+                <table class="rank-benchmark-table">
+                  <thead>
+                    <tr>
+                      <th>Metric</th>
+                      <th class="num-col">Student Value</th>
+                      <th class="num-col">Overall Average</th>
+                      <th class="num-col">Diff (Overall)</th>
+                      <th class="num-col">Programme Average</th>
+                      <th class="num-col">Diff (Prog)</th>
+                      <th class="num-col">Grad Year Average</th>
+                      <th class="num-col">Diff (Year)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rank-benchmark-table-body"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:var(--sp-3);font-size:0.72rem;color:var(--text-muted);line-height:1.4">
+                ℹ️ <strong>Benchmark Population Note:</strong> Overall benchmarks evaluate all 3,046 eligible records in the study dataset. Differences reflect comparative standing relative to cohort means and describe variation without attributing personal or external causation.
+              </div>
+            </div>
+
+            <!-- 3. Academic Stage Analysis -->
+            <div class="card mb-5">
+              <div class="card-title">Academic Stage Progression &amp; Variation</div>
+              <div class="card-desc">Stage-by-stage cumulative GPA evaluation across Level 100 to Level 400.</div>
+              <div id="rank-stage-grid" class="rank-stage-grid" style="margin-top:var(--sp-3);"></div>
+              <div id="rank-stage-note" style="font-size:0.76rem;color:var(--text-secondary);background:var(--slate-50);padding:8px 12px;border-radius:var(--r-sm);border:1px solid var(--border);"></div>
+            </div>
+
+            <!-- 4. Analytical Charts Grid -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:var(--sp-4);margin-bottom:var(--sp-5);">
+              
+              <!-- Chart 1: CGPA Distribution -->
+              <div class="card">
+                <div class="card-title">CGPA Distribution &amp; Standing</div>
+                <div class="card-desc">Distribution of all eligible records with student interval position highlighted.</div>
+                <div class="chart-wrap" style="height:240px;margin-top:var(--sp-3);">
+                  <canvas id="chart-rank-hist"></canvas>
+                </div>
+                <div class="chart-explain">
+                  <strong>What this shows:</strong> Binned distribution of cumulative CGPA across the study dataset. The highlighted bar shows where the student sits relative to the overall student body.
+                </div>
+              </div>
+
+              <!-- Chart 2: Benchmark Comparison -->
+              <div class="card">
+                <div class="card-title">Cohort Benchmark Comparisons</div>
+                <div class="card-desc">Visual comparison of student CGPA against departmental, year, and overall averages.</div>
+                <div class="chart-wrap" style="height:240px;margin-top:var(--sp-3);">
+                  <canvas id="chart-rank-bench"></canvas>
+                </div>
+                <div class="chart-explain">
+                  <strong>What this shows:</strong> Direct side-by-side comparison illustrating comparative distance between the student's score and reference cohort means.
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Chart 3: Stage Progression vs Peer Average -->
+            <div class="card mb-5">
+              <div class="card-title">Academic Stage Trajectory vs Programme Peer Mean</div>
+              <div class="card-desc">Student's level-by-level evaluation compared against the programme cohort's average stage trajectory.</div>
+              <div class="chart-wrap" style="height:260px;margin-top:var(--sp-3);">
+                <canvas id="chart-rank-stage"></canvas>
+              </div>
+              <div class="chart-explain">
+                <strong>What this shows:</strong> Progression from Level 100 through Level 400. Compares the student's stage trajectory with their programme peers' average trajectory.
+              </div>
+            </div>
+
+            <!-- 5. Dynamic Performance Interpretation -->
+            <div class="card mb-5">
+              <div class="rank-interp-title">
+                <span>💡</span> <span>Data-Driven Performance Interpretation</span>
+              </div>
+              <div class="rank-interp-box">
+                <ul id="rank-interp-list" class="rank-interp-list"></ul>
+              </div>
+            </div>
+
+            <!-- 6. Targets & Milestones Section -->
+            <div class="card mb-5">
+              <div class="card-title">Configured Performance Milestones &amp; Standing Targets</div>
+              <div class="card-desc">Calculated numerical targets based on dashboard-configured performance categories and cohort rank advancement.</div>
+              <div id="rank-targets-container" class="rank-targets-container" style="margin-top:var(--sp-3);"></div>
+              <div style="margin-top:var(--sp-3);font-size:0.72rem;color:var(--text-muted);line-height:1.4">
+                ℹ️ <strong>Target Guidance:</strong> Targets represent reference benchmarks computed from cohort distribution data. Academic results are evaluated solely through coursework and examination assessments; target attainment describes academic standing and does not imply or guarantee future rank.
+              </div>
+            </div>
+
+          </div><!-- /rank-content-panel -->
+
+        </section>
+
+        <!-- ══════════════════════════════════════════════════
              TAB 6 — DATA EXPLORER (Phase 7)
         ══════════════════════════════════════════════════ -->
         <section id="tab-explorer" class="section">
@@ -947,6 +1086,7 @@
 <script src="js/insights.js"></script>
 <script src="js/student.js"></script>
 <script src="js/data-explorer.js"></script>
+<script src="js/student-rank.js"></script>
 
 </body>
 </html>
