@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/phase3.css" />
+  <link rel="stylesheet" href="css/data-explorer.css" />
 </head>
 <body>
 
@@ -112,6 +113,7 @@
         <button class="nav-tab" data-tab="programs">Programmes</button>
         <button class="nav-tab" data-tab="trends">Trends</button>
         <button class="nav-tab" data-tab="student">Student Profile</button>
+        <button class="nav-tab" data-tab="explorer">Data Explorer</button>
       </nav>
 
       <!-- Active Filter Strip -->
@@ -815,6 +817,120 @@
           </div><!-- /student-profile-panel -->
         </section>
 
+        <!-- ══════════════════════════════════════════════════
+             TAB 6 — DATA EXPLORER (Phase 7)
+        ══════════════════════════════════════════════════ -->
+        <section id="tab-explorer" class="section">
+          <div class="section-title">Data Explorer</div>
+          <div class="section-subtitle">DataFrame-style interactive exploration of the student performance dataset.</div>
+
+          <!-- Explanation Card -->
+          <div class="card mb-4" style="padding: var(--sp-4);">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--text-primary);margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+              <span>🔬</span> <span>Data Explorer — Analytical Guide</span>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">
+              <p style="margin-bottom:4px;">
+                <strong>What this shows:</strong> This view lets you inspect the student records currently included by the dashboard filters.
+              </p>
+              <p style="margin-bottom:0;">
+                <strong>How to use:</strong> 1. Apply dashboard filters &bull; 2. Search or sort the records &bull; 3. Select a student to open My Performance &bull; 4. Export the filtered records when needed.
+              </p>
+            </div>
+          </div>
+
+          <!-- Dynamic Summary KPI Strip -->
+          <div class="de-summary-grid">
+            <div class="de-summary-card highlight">
+              <div class="de-summary-label">Records Shown</div>
+              <div class="de-summary-val" id="de-kpi-count" style="color:var(--primary)">0</div>
+              <div class="de-summary-sub">Matching cohort &amp; search</div>
+            </div>
+            <div class="de-summary-card">
+              <div class="de-summary-label">Average CGPA</div>
+              <div class="de-summary-val" id="de-kpi-avg-cgpa">—</div>
+              <div class="de-summary-sub">Cumulative mean</div>
+            </div>
+            <div class="de-summary-card">
+              <div class="de-summary-label">Average SGPA</div>
+              <div class="de-summary-val" id="de-kpi-avg-sgpa" style="color:var(--blue-600)">—</div>
+              <div class="de-summary-sub">Final semester mean</div>
+            </div>
+            <div class="de-summary-card">
+              <div class="de-summary-label">Highest CGPA</div>
+              <div class="de-summary-val" id="de-kpi-max-cgpa" style="color:var(--green-700)">—</div>
+              <div class="de-summary-sub">Cohort peak</div>
+            </div>
+            <div class="de-summary-card">
+              <div class="de-summary-label">Lowest CGPA</div>
+              <div class="de-summary-val" id="de-kpi-min-cgpa" style="color:var(--red-700)">—</div>
+              <div class="de-summary-sub">Cohort floor</div>
+            </div>
+          </div>
+
+          <!-- Toolbar (Search, Page Size, Export) -->
+          <div class="de-toolbar">
+            <div class="de-toolbar-left">
+              <div class="de-search-box">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input
+                  type="text"
+                  id="de-search-input"
+                  class="de-search-input"
+                  placeholder="Search by ID or Prog Code…"
+                  autocomplete="off"
+                />
+                <button id="de-search-clear" class="de-search-clear" style="display:none" title="Clear search">✕</button>
+              </div>
+
+              <div class="de-pagesize-wrap">
+                <span>Rows per page:</span>
+                <select id="de-pagesize-select" class="de-pagesize-select">
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="de-toolbar-right">
+              <button id="de-btn-export" class="de-btn-export" title="Export currently filtered and searched records as CSV">
+                <span>📥</span>
+                <span>Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Interactive Table -->
+          <div class="de-table-wrap" id="de-table-wrap">
+            <table class="de-table" id="de-table">
+              <thead id="de-table-head"></thead>
+              <tbody id="de-table-body"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="de-pagination-bar" id="de-pagination-bar">
+            <div id="de-page-count">Showing 0–0 of 0 records</div>
+            <div class="de-page-controls">
+              <button id="de-page-prev" class="de-page-btn" disabled>&larr; Previous</button>
+              <span id="de-page-indicator" class="de-page-indicator">Page 1 of 1</span>
+              <button id="de-page-next" class="de-page-btn" disabled>Next &rarr;</button>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="de-empty-state" id="de-empty-state" style="display:none;">
+            <div class="de-empty-icon">🔍</div>
+            <div class="de-empty-text">No records match the current filters.</div>
+            <div class="de-empty-sub">Try broadening your global sidebar filters or clearing your local search terms.</div>
+            <button class="de-empty-btn" onclick="if(typeof window.resetFilters==='function')window.resetFilters();">Clear Filters</button>
+          </div>
+
+        </section>
+
       </div><!-- /content -->
     </div><!-- /main -->
   </div><!-- /body -->
@@ -830,6 +946,7 @@
 <script src="js/charts.js"></script>
 <script src="js/insights.js"></script>
 <script src="js/student.js"></script>
+<script src="js/data-explorer.js"></script>
 
 </body>
 </html>

@@ -334,6 +334,10 @@ function clearStudentSelection() {
   if (typeof window.updateAllCharts === 'function') {
     window.updateAllCharts(STATE.filteredStudents);
   }
+
+  if (typeof window.highlightSelectedRowInExplorer === 'function') {
+    window.highlightSelectedRowInExplorer();
+  }
 }
 
 /* Helper to escape html */

@@ -171,6 +171,11 @@ function applyFilters() {
       window.updateStudentComparisonContext(s);
     }
   }
+
+  // Update Data Explorer if available
+  if (typeof window.renderDataExplorer === 'function') {
+    window.renderDataExplorer();
+  }
 }
 
 /* ─── Active Filter Chips ──────────────────────────────────────────── */
@@ -420,6 +425,7 @@ function boot() {
   renderTierDefinitions();
   if (typeof window.initFilters === 'function') window.initFilters(data);
   if (typeof window.initAllCharts === 'function') window.initAllCharts(data);
+  if (typeof window.initDataExplorer === 'function') window.initDataExplorer();
   applyFilters();
 
   // Hide loading
